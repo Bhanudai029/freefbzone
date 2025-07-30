@@ -12,6 +12,7 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
+    python3-venv \
     wget \
     gnupg \
     ca-certificates \
@@ -45,8 +46,10 @@ COPY requirements.txt ./
 # Install Node.js dependencies
 RUN npm install
 
-# Install Python dependencies
-RUN pip3 install --no-cache-dir -r requirements.txt
+# Install Python dependencies in virtual environment
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
 COPY . .
