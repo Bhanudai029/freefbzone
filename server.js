@@ -738,6 +738,44 @@ app.post('/download-creator-logo-automation', async (req, res) => {
     }
 });
 
+// Audio download proxy endpoint
+app.post('/download-audio', async (req, res) => {
+    const { videoUrl } = req.body;
+    
+    if (!videoUrl) {
+        return res.status(400).json({ error: 'Video URL is required' });
+    }
+    
+    try {
+        console.log(`Proxying audio download request: ${videoUrl}`);
+        
+        // Forward the request to Flask server
+        const flaskResponse = await fetch('http://localhost:5000/download-audio', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ videoUrl: videoUrl })
+        });
+        
+        if (!flaskResponse.ok) {
+            const errorData = await flaskResponse.json().catch(() => ({ error: 'Audio processing failed' }));
+            return res.status(flaskResponse.status).json(errorData);
+        }
+        
+        // Set appropriate headers for file download
+        res.setHeader('Content-Type', 'audio/mpeg');
+        res.setHeader('Content-Disposition', 'attachment; filename="freefbzone_audio.mp3"');
+        
+        // Stream the response from Flask to the client
+        flaskResponse.body.pipe(res);
+        
+    } catch (error) {
+        console.error('Error in audio download proxy:', error);
+        res.status(500).json({ error: 'Audio download failed: ' + error.message });
+    }
+});
+
 app.listen(port, () => {
     console.log(`Server is running! Open http://localhost:${port} in your browser.`);
 });

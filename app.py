@@ -75,4 +75,6 @@ def download_audio():
 
 if __name__ == '__main__':
     print("Starting Flask Audio Processing Server on port 5000...")
-    app.run(debug=True, port=5000, host='127.0.0.1')
+    # Use 0.0.0.0 to bind to all interfaces in Docker, 127.0.0.1 for local development
+    host = '0.0.0.0' if os.getenv('RENDER') or os.getenv('DOCKER') else '127.0.0.1'
+    app.run(debug=False, port=5000, host=host)
