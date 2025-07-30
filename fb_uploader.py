@@ -1,0 +1,343 @@
+# -*- coding: utf-8 -*-
+import requests
+import re
+import sys
+from urllib.parse import urlparse, parse_qs
+import json
+
+# Set UTF-8 encoding for Windows console
+if sys.platform.startswith('win'):
+    import codecs
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
+    sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
+
+def extract_uploader_from_video_url(video_url):
+    """
+    Extract the uploader's profile information from a Facebook video URL
+    """
+    print(f"🔍 Analyzing video URL: {video_url}")
+    
+    try:
+        # Set up headers to mimic a real browser
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Cache-Control': 'max-age=0'
+        }
+        
+        print("📡 Fetching video page...")
+        response = requests.get(video_url, headers=headers, timeout=30)
+        
+        if response.status_code == 200:
+            page_content = response.text
+            print("✅ Page fetched successfully")
+            
+            # Multiple patterns to find uploader profile information
+            uploader_patterns = [
+                # Pattern 1: Look for profile.php?id= links with names
+                r'"name":"([^"]+)"[^}]*"url":"(https://www\.facebook\.com/profile\.php\?id=\d+)"',
+                r'"url":"(https://www\.facebook\.com/profile\.php\?id=\d+)"[^}]*"name":"([^"]+)"',
+                r'href="(https://www\.facebook\.com/profile\.php\?id=\d+)"[^>]*title="([^"]+)"',
+                r'title="([^"]+)"[^>]*href="(https://www\.facebook\.com/profile\.php\?id=\d+)"',
+                
+                # Pattern 2: Simple profile.php?id= links
+                r'"(https://www\.facebook\.com/profile\.php\?id=\d+)"',
+                r'href="(https://www\.facebook\.com/profile\.php\?id=\d+)"',
+                
+                # Pattern 3: Username-based profiles with names
+                r'"name":"([^"]+)"[^}]*"url":"(https://www\.facebook\.com/[a-zA-Z0-9._-]+)"',
+                r'"url":"(https://www\.facebook\.com/[a-zA-Z0-9._-]+)"[^}]*"name":"([^"]+)"',
+                
+                # Pattern 4: Simple username-based profiles
+                r'"(https://www\.facebook\.com/[a-zA-Z0-9._-]+)"',
+                r'href="(https://www\.facebook\.com/[a-zA-Z0-9._-]+)"',
+                
+                # Pattern 5: Look in JSON-LD or structured data
+                r'"author":\s*{[^}]*"@type":\s*"Person"[^}]*"name":\s*"([^"]+)"[^}]*"url":\s*"([^"]+)"',
+                r'"author":\s*{[^}]*"url":\s*"([^"]+)"[^}]*"name":\s*"([^"]+)"',
+                
+                # Pattern 6: Look for ownerID or similar fields with names
+                r'"name":"([^"]+)"[^}]*"ownerID":"(\d+)"',
+                r'"ownerID":"(\d+)"[^}]*"name":"([^"]+)"',
+                r'"owner_id":"(\d+)"',
+                r'"authorID":"(\d+)"',
+                
+                # Pattern 7: Look for profile links in meta tags
+                r'<meta[^>]*property="profile:username"[^>]*content="([^"]+)"',
+                r'<meta[^>]*property="og:title"[^>]*content="([^"]+)"',
+                
+                # Pattern 8: Look for actor_id in Facebook's internal data
+                r'"actor_id":"(\d+)"',
+                r'"actorID":"(\d+)"',
+                
+                # Pattern 9: Look for page owner information
+                r'"page_id":"(\d+)"',
+                r'"pageID":"(\d+)"',
+                
+                # Pattern 10: Look for video uploader in data attributes
+                r'data-video-uploader="([^"]+)"',
+                r'data-uploader-name="([^"]+)"',
+                
+                # Pattern 11: Look for profile info in Facebook's internal JSON
+                r'"profile_name":"([^"]+)"[^}]*"profile_id":"(\d+)"',
+                r'"profile_id":"(\d+)"[^}]*"profile_name":"([^"]+)"',
+            ]
+            
+            found_profiles = []
+            
+            # Search for profile patterns
+            for i, pattern in enumerate(uploader_patterns):
+                matches = re.findall(pattern, page_content, re.IGNORECASE)
+                if matches:
+                    print(f"🔍 Found matches with pattern {i+1}: {len(matches)} results")
+                    found_profiles.extend(matches)
+            
+            # Clean and deduplicate results
+            if found_profiles:
+                unique_profiles = []
+                seen = set()
+                
+                for profile in found_profiles:
+                    # Handle tuple results from some regex patterns
+                    if isinstance(profile, tuple):
+                        if len(profile) == 2:
+                            # Check which one is the URL and which is the name
+                            if profile[0].startswith('http') or profile[0].isdigit():
+                                profile_url = profile[0]
+                                profile_name = profile[1]
+                            else:
+                                profile_name = profile[0]
+                                profile_url = profile[1]
+                        else:
+                            profile_url = profile[0]
+                            profile_name = "Unknown"
+                    else:
+                        profile_url = profile
+                        profile_name = "Unknown"
+                    
+                    # Convert numeric IDs to full profile URLs
+                    if profile_url.isdigit():
+                        profile_url = f"https://www.facebook.com/profile.php?id={profile_url}"
+                    elif not profile_url.startswith('http'):
+                        if profile_url.isdigit():
+                            profile_url = f"https://www.facebook.com/profile.php?id={profile_url}"
+                        else:
+                            # For username-based profiles, make sure it's not a generic term
+                            # Filter out invalid characters and patterns
+                            if (len(profile_url) > 3 and 
+                                not any(x in profile_url.lower() for x in ['www', 'com', 'facebook', 'views', 'reactions', '&#', '|', ' ']) and
+                                not re.search(r'[^a-zA-Z0-9._-]', profile_url)):  # Only allow valid username characters
+                                profile_url = f"https://www.facebook.com/{profile_url}"
+                            else:
+                                continue  # Skip invalid usernames
+                    
+                    # Filter out invalid or generic URLs
+                    if (profile_url not in seen and 
+                        'facebook.com' in profile_url and 
+                        'id=0' not in profile_url and  # Filter out URLs with id=0
+                        not any(x in profile_url.lower() for x in ['login', 'signup', 'help', 'about', 'privacy', 'terms', 'policies', 'support']) and
+                        len(profile_url) > 30):  # Ensure URL is substantial
+                        seen.add(profile_url)
+                        unique_profiles.append((profile_name, profile_url))
+                
+                # Sort by relevance - profiles with names first, then by URL length
+                unique_profiles.sort(key=lambda x: (x[0] == "Unknown", -len(x[1])))
+                
+                return unique_profiles
+            else:
+                print("❌ No uploader profile information found in page content")
+                return None
+                
+        else:
+            print(f"❌ Failed to fetch page: HTTP {response.status_code}")
+            return None
+            
+    except Exception as e:
+        print(f"❌ Error analyzing video URL: {e}")
+        return None
+
+def extract_video_id_from_url(video_url):
+    """
+    Extract video ID from different Facebook video URL formats
+    """
+    try:
+        # Pattern 1: /share/v/VIDEO_ID/
+        match = re.search(r'/share/v/([^/]+)', video_url)
+        if match:
+            return match.group(1)
+        
+        # Pattern 2: /watch/?v=VIDEO_ID
+        match = re.search(r'/watch/\?v=([^&]+)', video_url)
+        if match:
+            return match.group(1)
+        
+        # Pattern 3: /videos/VIDEO_ID
+        match = re.search(r'/videos/([^/]+)', video_url)
+        if match:
+            return match.group(1)
+        
+        # Pattern 4: /reel/VIDEO_ID
+        match = re.search(r'/reel/([^/]+)', video_url)
+        if match:
+            return match.group(1)
+        
+        return None
+    except:
+        return None
+
+def validate_facebook_video_url(url):
+    """
+    Validate if the URL is a Facebook video URL
+    """
+    if not url.startswith(('http://', 'https://')):
+        url = 'https://' + url
+    
+    if 'facebook.com' not in url:
+        return False, "URL must be a Facebook URL"
+    
+    # Check if it's a valid Facebook video URL pattern
+    valid_patterns = [
+        '/share/v/',  # New share format
+        '/watch/',    # Watch format  
+        '/videos/',   # Direct video format
+        '/reel/',     # Reel format
+    ]
+    
+    if not any(pattern in url for pattern in valid_patterns):
+        return False, "URL doesn't appear to be a Facebook video URL"
+    
+    return True, url
+
+def format_profile_info(profile_name, profile_url):
+    """
+    Format the profile information for display
+    """
+    try:
+        # Clean up profile name if it has encoding issues
+        if profile_name != "Unknown":
+            # Remove common JSON artifacts
+            profile_name = profile_name.replace('\\u', ' ').replace('"', '').strip()
+            # Decode common HTML entities
+            profile_name = profile_name.replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
+        
+        if 'profile.php?id=' in profile_url:
+            # Extract numeric ID
+            match = re.search(r'id=(\d+)', profile_url)
+            if match:
+                user_id = match.group(1)
+                if profile_name != "Unknown":
+                    return f"👤 Profile Name: {profile_name}\n🆔 User ID: {user_id}\n🔗 URL: {profile_url}"
+                else:
+                    return f"🆔 User ID: {user_id}\n🔗 URL: {profile_url}"
+        else:
+            # Username-based profile
+            if profile_url and 'facebook.com/' in profile_url:
+                username = profile_url.split('facebook.com/')[-1].split('/')[0].split('?')[0]
+                if profile_name != "Unknown":
+                    return f"👤 Profile Name: {profile_name}\n📝 Username: {username}\n🔗 URL: {profile_url}"
+                else:
+                    return f"📝 Username: {username}\n🔗 URL: {profile_url}"
+            else:
+                # Fallback if profile_url is malformed
+                if profile_name != "Unknown":
+                    return f"👤 Profile Name: {profile_name}\n🔗 URL: {profile_url}"
+                else:
+                    return f"🔗 URL: {profile_url}"
+    except:
+        pass
+    
+    if profile_name != "Unknown":
+        if 'id=0' not in profile_url:
+            return f"👤 Profile Name: {profile_name}\n🔗 URL: {profile_url}"
+        else:
+            return "❌ Invalid profile detected; please check the URL."
+    else:
+        if 'id=0' not in profile_url:
+            return f"🔗 URL: {profile_url}"
+        else:
+            return "❌ Invalid profile detected; please check the URL."
+
+def main():
+    print("Facebook Video Uploader Profile Detector")
+    print("=" * 50)
+    
+    # Get video URL from user input
+    print("📝 Enter Facebook video URL:")
+    print("   Example: https://www.facebook.com/share/v/1axgDVeCjG/")
+    print("   Or: https://www.facebook.com/watch/?v=1234567890")
+    
+    user_input = input("\nVideo URL: ").strip()
+    
+    if not user_input:
+        print("❌ Error: No URL provided")
+        return
+    
+    # Validate the URL
+    is_valid, result = validate_facebook_video_url(user_input)
+    if not is_valid:
+        print(f"❌ Error: {result}")
+        return
+    
+    video_url = result
+    print(f"✅ Valid video URL detected")
+    
+    # Extract video ID for reference
+    video_id = extract_video_id_from_url(video_url)
+    if video_id:
+        print(f"🎥 Video ID: {video_id}")
+    
+    print(f"\n{'='*50}")
+    
+    # Extract uploader information
+    uploader_profiles = extract_uploader_from_video_url(video_url)
+    
+    if uploader_profiles and len(uploader_profiles) > 0:
+        print(f"\n✅ Found {len(uploader_profiles)} potential uploader profile(s):")
+        print(f"{'='*50}")
+        
+        # Select the second result as the primary result
+        if len(uploader_profiles) > 1:
+            primary_profile = uploader_profiles[1]
+        else:
+            primary_profile = uploader_profiles[0]
+        
+        for i, (name, url) in enumerate(uploader_profiles, 1):
+            print(f"\n📋 Result #{i}:")
+            print(format_profile_info(name, url))
+        
+        # Highlight the selected primary result
+        print(f"\n🎯 Most likely uploader profile ↑")
+        if len(uploader_profiles) > 1:
+            print(f"Selected Result #{2}:")
+        else:
+            print(f"Selected Result #{1}:")
+        print(format_profile_info(primary_profile[0], primary_profile[1]))
+        
+        print(f"\n{'='*50}")
+        print("💡 The second result is typically the most accurate video uploader")
+        
+        # Display final URL
+        print(f"\n🔗 Final URL: {primary_profile[1]}")
+        
+    else:
+        print("\n❌ Could not identify the video uploader")
+        print("💡 This might be due to:")
+        print("   • Video privacy settings")
+        print("   • Page access restrictions") 
+        print("   • Video may have been deleted")
+        print("   • URL format not supported")
+        
+        print(f"\n🔄 You can try:")
+        print(f"   • Opening the URL manually: {video_url}")
+        print(f"   • Checking if you're logged into Facebook")
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,17 @@
+{
+  "name": "freefbzone",
+  "version": "1.0.0",
+  "description": "Facebook video description and info scraper",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/app.js"
+  },
+  "dependencies": {
+    "cheerio": "^1.1.2",
+    "express": "^4.18.2",
+    "node-fetch": "^2.7.0",
+    "playwright": "^1.54.1",
+    "puppeteer-core": "^24.15.0"
+  }
+}
