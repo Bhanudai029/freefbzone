@@ -5,12 +5,16 @@ async function scrapeFacebookVideo(url) {
     try {
         browser = await puppeteer.launch({
             headless: true,
-            executablePath: 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome',
             defaultViewport: null,
             timeout: 120000,
             args: [
-                '--window-size=1920,1080'
-                // Remote debugging port removed
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--window-size=1920,1080',
+                '--disable-gpu',
+                '--disable-web-security'
             ],
             ignoreDefaultArgs: ['--enable-automation']
         });
