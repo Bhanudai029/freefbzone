@@ -6,7 +6,10 @@ services:
     plan: free
     region: oregon
     branch: main
+    port: 3000
     healthCheckPath: /
+    buildCommand: ""
+    startCommand: "/app/start.sh"
     envVars:
       - key: NODE_ENV
         value: production
@@ -14,3 +17,5 @@ services:
         value: /app
       - key: DISPLAY
         value: :99
+      - key: PORT
+        value: 3000
