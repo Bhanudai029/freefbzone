@@ -30,8 +30,11 @@ async def download_facebook_video_snapsave(url):
         page = None
         context = None
         try:
-            # Launch browser
-            browser = await p.chromium.launch(headless=True)
+            # Launch browser using system Chrome instead of Playwright's Chromium
+            browser = await p.chromium.launch(
+                headless=True,
+                executable_path='/usr/bin/google-chrome'
+            )
             context = await browser.new_context(
                 viewport={"width": 1280, "height": 720},
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
