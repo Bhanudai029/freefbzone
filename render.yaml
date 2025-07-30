@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: freefbzone
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    branch: main
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PYTHONPATH
+        value: /app
+      - key: DISPLAY
+        value: :99
