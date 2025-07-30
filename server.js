@@ -738,7 +738,7 @@ app.post('/download-creator-logo-automation', async (req, res) => {
     }
 });
 
-// Audio download proxy endpoint
+// Audio download endpoint - integrated approach
 app.post('/download-audio', async (req, res) => {
     const { videoUrl } = req.body;
     
@@ -747,31 +747,68 @@ app.post('/download-audio', async (req, res) => {
     }
     
     try {
-        console.log(`Proxying audio download request: ${videoUrl}`);
+        console.log(`Processing audio download request: ${videoUrl}`);
         
-        // Forward the request to Flask server
-        const flaskResponse = await fetch('http://localhost:5000/download-audio', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ videoUrl: videoUrl })
+        // Use the Python script directly to process audio
+        const command = `python audio.py "${videoUrl}"`;
+        
+        exec(command, { timeout: 300000 }, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Error executing Python audio script: ${error.message}`);
+                return res.status(500).json({ error: 'Audio processing failed: An internal server error occurred.' });
+            }
+            
+            if (stderr) {
+                console.error(`Python audio script stderr: ${stderr}`);
+            }
+            
+            console.log(`Python audio script output: ${stdout}`);
+            
+            // Check if the script indicates success and extract the audio file path
+            const match = stdout.match(/Audio file ready: (.*)/);
+            if (match && match[1]) {
+                const audioFilePath = match[1].trim();
+                
+                if (fs.existsSync(audioFilePath)) {
+                    console.log(`Audio file found: ${audioFilePath}`);
+                    
+                    // Set headers for MP3 download
+                    res.setHeader('Content-Type', 'audio/mpeg');
+                    res.setHeader('Content-Disposition', 'attachment; filename="freefbzone_audio.mp3"');
+                    
+                    // Create read stream and pipe to response
+                    const fileStream = fs.createReadStream(audioFilePath);
+                    fileStream.pipe(res);
+                    
+                    // Clean up file after sending
+                    fileStream.on('end', () => {
+                        try {
+                            fs.unlinkSync(audioFilePath);
+                            console.log(`Cleaned up audio file: ${audioFilePath}`);
+                        } catch (cleanupError) {
+                            console.error(`Failed to cleanup audio file: ${cleanupError.message}`);
+                        }
+                    });
+                    
+                    fileStream.on('error', (streamError) => {
+                        console.error(`Error streaming audio file: ${streamError.message}`);
+                        if (!res.headersSent) {
+                            res.status(500).json({ error: 'Failed to stream audio file' });
+                        }
+                    });
+                } else {
+                    return res.status(500).json({ error: 'Audio file was not created' });
+                }
+            } else {
+                // Extract error message from stdout if available
+                const errorMatch = stdout.match(/\[ERROR\](.*)/);
+                const errorMessage = errorMatch ? errorMatch[1].trim() : 'Audio processing failed';
+                return res.status(500).json({ error: errorMessage });
+            }
         });
         
-        if (!flaskResponse.ok) {
-            const errorData = await flaskResponse.json().catch(() => ({ error: 'Audio processing failed' }));
-            return res.status(flaskResponse.status).json(errorData);
-        }
-        
-        // Set appropriate headers for file download
-        res.setHeader('Content-Type', 'audio/mpeg');
-        res.setHeader('Content-Disposition', 'attachment; filename="freefbzone_audio.mp3"');
-        
-        // Stream the response from Flask to the client
-        flaskResponse.body.pipe(res);
-        
     } catch (error) {
-        console.error('Error in audio download proxy:', error);
+        console.error('Error in audio download endpoint:', error);
         res.status(500).json({ error: 'Audio download failed: ' + error.message });
     }
 });

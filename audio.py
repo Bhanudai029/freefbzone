@@ -247,10 +247,16 @@ def main(video_url):
         raise e
 
 if __name__ == "__main__":
-    # Example video URL
-    video_url = 'http://example.com/sample_video.mp4'
+    import sys
+    
+    if len(sys.argv) < 2:
+        print("[ERROR] Usage: python audio.py <video_url>")
+        sys.exit(1)
+    
+    video_url = sys.argv[1]
     try:
         result = main(video_url)
         print(f"Audio file ready: {result}")
     except Exception as e:
-        print(f"Failed to process: {e}")
+        print(f"[ERROR] Failed to process: {e}")
+        sys.exit(1)
