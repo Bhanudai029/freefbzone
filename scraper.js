@@ -38,7 +38,19 @@ async function scrapeFacebookVideo(url) {
         await page.waitForSelector('h2 a', { timeout: 60000 }).catch(e => {
             console.log('Warning: Could not find h2 a selector - this is expected for share/v/ URLs');
         });
-        await new Promise(resolve => setTimeout(resolve, 3000)); 
+        // Wait longer and add scroll to trigger lazy loading
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        
+        // Scroll to trigger any lazy-loaded content
+        await page.evaluate(() => {
+            window.scrollTo(0, document.body.scrollHeight / 3);
+        });
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        await page.evaluate(() => {
+            window.scrollTo(0, 0);
+        });
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         // Removed screenshot debugging code
 
@@ -406,17 +418,20 @@ async function scrapeFacebookVideo(url) {
             try {
             const allElements = Array.from(document.querySelectorAll('span, div'));
 
-            const findStat = (regex) => {
-                const element = allElements.find(el => el.children.length === 0 && regex.test(el.innerText));
-                if (element) {
-                    const match = element.innerText.match(regex);
-                    if (match) return match[0].trim();
+            const findStat = (regexArr) => {
+                for (const regex of regexArr) {
+                    const element = allElements.find(el => el.children.length === 0 && regex.test(el.innerText));
+                    if (element) {
+                        const match = element.innerText.match(regex);
+                        if (match) return match[0].trim();
+                    }
                 }
                 return 'Not Found';
             };
 
-            plays = findStat(/([\d,.]+\s*[KMB]?\s*(?:plays|views))/i);
-            comments = findStat(/([\d,.]+\s*[KMB]?\s*comment[s]?)/i);
+            // Try multiple regex patterns to find stats
+            plays = findStat([/([\d,.]+\s*[KMB]?\s*(?:plays|views))/i, /([\d,.]+\s*[KMB]?\s*watch[s]?)/i]);
+            comments = findStat([/([\d,.]+\s*[KMB]?\s*comment[s]?)/i, /([\d,.]+\s*[KMB]?\s*reply[s]?)/i]);
 
             const reactionKeywords = ['reaction', 'like', 'love', 'care', 'haha', 'wow', 'sad', 'angry'];
             const reactionEl = allElements.find(el => {
@@ -433,9 +448,11 @@ async function scrapeFacebookVideo(url) {
                 if (match) likes = match[0].trim();
             }
 
-            const durationEl = allElements.find(el => el.innerText.match(/^\d{1,2}:\d{2}\s*\/\s*\d{1,2}:\d{2}$/));
-            if(durationEl){
-                duration = durationEl.innerText.split('/')[1].trim();
+            const durationMatch = /\d{1,2}:\d{2}\s*\/\s*\d{1,2}:\d{2}/;
+            const durationEl = allElements.find(el => durationMatch.test(el.innerText));
+            if (durationEl) {
+                const match = durationEl.innerText.match(durationMatch);
+                if (match) duration = match[0].split('/')[1].trim();
             }
 
             const dateKeywords = /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|d|h|w|m|yesterday|now)/i;
