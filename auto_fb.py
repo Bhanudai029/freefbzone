@@ -136,6 +136,35 @@ def validate_facebook_video_url(url):
     
     return True, url
 
+def extract_profile_url_directly(video_url):
+    """
+    Directly extract profile URL from video URL using fb_uploader logic
+    """
+    try:
+        # Import fb_uploader functions directly
+        from fb_uploader import extract_uploader_from_video_url
+        
+        print(f"🔍 Extracting profile URL from: {video_url}")
+        uploader_profiles = extract_uploader_from_video_url(video_url)
+        
+        if uploader_profiles and len(uploader_profiles) > 0:
+            # Select the most likely profile (usually the first or second result)
+            if len(uploader_profiles) > 1:
+                primary_profile = uploader_profiles[1]  # Second result is usually more accurate
+            else:
+                primary_profile = uploader_profiles[0]
+            
+            profile_name, profile_url = primary_profile
+            print(f"✅ Successfully extracted profile URL: {profile_url}")
+            return profile_url
+        else:
+            print("❌ Could not extract profile URL from video")
+            return None
+            
+    except Exception as e:
+        print(f"❌ Error extracting profile URL: {e}")
+        return None
+
 def main():
     # Add argument parser for non-interactive mode
     parser = argparse.ArgumentParser(description='Facebook Video to Profile Picture Automation.')
@@ -191,14 +220,14 @@ def main():
     if 'facebook.com' in video_url:
         video_url = video_url.split('?')[0]  # Strip query
         
-    # Step 1: Extract profile URL using fb_uploader.py
-    profile_url = run_fb_uploader(video_url)
+    # Step 1: Extract profile URL directly (simplified approach)
+    profile_url = extract_profile_url_directly(video_url)
     
     if not profile_url:
         print("\n❌ Failed to extract profile URL. Automation stopped.")
         return
     
-    # Step 2: Process profile using profile_automation.py
+    # Step 2: Process profile using profile_automation.py (only if we have a valid profile URL)
     print(f"\n🔄 Proceeding to process profile: {profile_url}")
     success = run_profile_automation(profile_url, args.output_file)
     
@@ -211,6 +240,7 @@ def main():
         if is_interactive:
             print("💡 You may need to check the browser manually")
     
+    # Always show the summary with the extracted profile URL
     print("\n📋 Summary:")
     print(f"   📹 Video URL: {video_url}")
     print(f"   👤 Profile URL: {profile_url}")
