@@ -58,16 +58,17 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Create a startup script
-RUN echo '#!/bin/bash\
-\
-# Start Xvfb for headless browser automation\
-Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &\
-\
-# Start Node.js server\
-node server.js' > /app/start.sh && chmod +x /app/start.sh
+RUN echo '#!/bin/bash' > /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo '# Start Xvfb for headless browser automation' >> /app/start.sh && \
+    echo 'Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo '# Start Node.js server' >> /app/start.sh && \
+    echo 'node server.js' >> /app/start.sh && \
+    chmod +x /app/start.sh
 
 # Expose port
-EXPOSE 3000
+EXPOSE 10000
 
 # Start the application
 CMD ["/app/start.sh"]
