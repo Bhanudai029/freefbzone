@@ -55,7 +55,7 @@ def extract_uploader_with_browser(video_url):
                 break
         
         if not chrome_path:
-            print("❌ Chrome not found for browser extraction")
+            print("❌ Chrome not found. Please ensure Chrome is installed and the path is correct.")
             return None
         
         # Set up Chrome options
@@ -116,11 +116,11 @@ def extract_profiles_from_content(page_content):
     """
     # Multiple patterns to find uploader profile information
     uploader_patterns = [
-                # Pattern 1: Look for profile.php?id= links with names
-                r'"name":"([^"]+)"[^}]*"url":"(https://www\.facebook\.com/profile\.php\?id=\d+)"',
-                r'"url":"(https://www\.facebook\.com/profile\.php\?id=\d+)"[^}]*"name":"([^"]+)"',
-                r'href="(https://www\.facebook\.com/profile\.php\?id=\d+)"[^>]*title="([^"]+)"',
-                r'title="([^"]+)"[^>]*href="(https://www\.facebook\.com/profile\.php\?id=\d+)"',
+                # Pattern 1: Look for profile.php?id= links with correct logic
+                r'"name":"([^"]+)"[^}]*"url":"(https://www\.facebook\.com/profile\.php\?id=\d{16})"',
+                r'"url":"(https://www\.facebook\.com/profile\.php\?id=\d{16})"[^}]*"name":"([^"]+)"',
+                r'href="(https://www\.facebook\.com/profile\.php\?id=\d{16})"[^\u003e]*title="([^"]+)"',
+                r'title="([^"]+)"[^\u003e]*href="(https://www\.facebook\.com/profile\.php\?id=\d{16})"',
                 
                 # Pattern 2: Simple profile.php?id= links
                 r'"(https://www\.facebook\.com/profile\.php\?id=\d+)"',
