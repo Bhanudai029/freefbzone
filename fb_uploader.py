@@ -230,12 +230,67 @@ def extract_profiles_from_content(page_content):
         print("❌ No uploader profile information found in page content")
         return None
 
+def extract_profile_from_url_structure(video_url):
+    """
+    Extract profile information directly from URL structure (more reliable for cloud environments)
+    """
+    print(f"🎯 Trying URL structure analysis: {video_url}")
+    
+    try:
+        # Pattern 1: https://www.facebook.com/PROFILE_ID/videos/VIDEO_ID/
+        # Example: https://www.facebook.com/100064919797326/videos/1319076146302071/
+        match = re.search(r'facebook\.com/([0-9]{15,})/videos/([0-9]+)', video_url)
+        if match:
+            profile_id = match.group(1)
+            video_id = match.group(2)
+            profile_url = f"https://www.facebook.com/profile.php?id={profile_id}"
+            print(f"✅ Found profile from URL structure: {profile_url}")
+            return [("Unknown", profile_url)]
+        
+        # Pattern 2: https://www.facebook.com/USERNAME/videos/VIDEO_ID/
+        # Example: https://www.facebook.com/username/videos/1234567890/
+        match = re.search(r'facebook\.com/([a-zA-Z0-9._-]+)/videos/([0-9]+)', video_url)
+        if match:
+            username = match.group(1)
+            # Skip if it's a numeric ID (already handled above)
+            if not username.isdigit():
+                profile_url = f"https://www.facebook.com/{username}"
+                print(f"✅ Found profile from URL structure: {profile_url}")
+                return [("Unknown", profile_url)]
+        
+        # Pattern 3: Look for profile ID in share URLs by analyzing the video ID
+        # Sometimes the video ID contains encoded profile information
+        video_id = extract_video_id_from_url(video_url)
+        if video_id and len(video_id) > 10:
+            # Try to find numeric sequences that could be profile IDs
+            numeric_sequences = re.findall(r'\d{15,}', video_id)
+            if numeric_sequences:
+                profile_id = numeric_sequences[0]
+                profile_url = f"https://www.facebook.com/profile.php?id={profile_id}"
+                print(f"✅ Constructed profile from video ID: {profile_url}")
+                return [("Unknown", profile_url)]
+        
+        print("❌ Could not extract profile from URL structure")
+        return None
+        
+    except Exception as e:
+        print(f"❌ Error in URL structure analysis: {e}")
+        return None
+
 def extract_uploader_from_video_url(video_url):
     """
     Extract the uploader's profile information from a Facebook video URL
     """
     print(f"🔍 Analyzing video URL: {video_url}")
     
+    # PRIORITY 1: Try URL structure analysis first (most reliable for cloud environments)
+    print("🎯 Method 1: URL structure analysis...")
+    url_profiles = extract_profile_from_url_structure(video_url)
+    if url_profiles:
+        return url_profiles
+    
+    # PRIORITY 2: Enhanced HTTP method with cloud-optimized headers
+    print("📡 Method 2: Enhanced HTTP extraction...")
     try:
         # Create a session for better connection management
         session = requests.Session()
