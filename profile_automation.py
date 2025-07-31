@@ -58,26 +58,30 @@ def download_chromedriver():
                         break
             
             if not target_version:
-                # Fallback to a known working version
+                # Fallback to a known working version compatible with Chrome 138
                 if current_platform == "Windows":
                     driver_url = "https://storage.googleapis.com/chrome-for-testing-public/131.0.6778.108/win64/chromedriver-win64.zip"
                 else:
-                    driver_url = "https://storage.googleapis.com/chrome-for-testing-public/131.0.6778.108/linux64/chromedriver-linux64.zip"
-                target_version = "131.0.6778.108"
+                    # Use Chrome 138 compatible ChromeDriver for Linux/Render
+                    driver_url = "https://storage.googleapis.com/chrome-for-testing-public/138.0.7204.183/linux64/chromedriver-linux64.zip"
+                target_version = "138.0.7204.183"
         else:
             # Fallback URLs
             if current_platform == "Windows":
                 driver_url = "https://storage.googleapis.com/chrome-for-testing-public/131.0.6778.108/win64/chromedriver-win64.zip"
             else:
-                driver_url = "https://storage.googleapis.com/chrome-for-testing-public/131.0.6778.108/linux64/chromedriver-linux64.zip"
-            target_version = "131.0.6778.108"
+                # Use Chrome 138 compatible ChromeDriver for Linux/Render
+                driver_url = "https://storage.googleapis.com/chrome-for-testing-public/138.0.7204.183/linux64/chromedriver-linux64.zip"
+            target_version = "138.0.7204.183"
     except:
         # Fallback URLs in case of any error
         if current_platform == "Windows":
             driver_url = "https://storage.googleapis.com/chrome-for-testing-public/131.0.6778.108/win64/chromedriver-win64.zip"
+            target_version = "131.0.6778.108"
         else:
-            driver_url = "https://storage.googleapis.com/chrome-for-testing-public/131.0.6778.108/linux64/chromedriver-linux64.zip"
-        target_version = "131.0.6778.108"
+            # Use Chrome 138 compatible ChromeDriver for Linux/Render
+            driver_url = "https://storage.googleapis.com/chrome-for-testing-public/138.0.7204.183/linux64/chromedriver-linux64.zip"
+            target_version = "138.0.7204.183"
     
     print(f"[*] Using ChromeDriver version: {target_version}")
     print(f"[*] Download URL: {driver_url}")
