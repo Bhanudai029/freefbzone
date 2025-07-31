@@ -259,9 +259,53 @@ def setup_webdriver():
         print(f"[*] Error details: {type(e).__name__}: {str(e)}")
         return None
 
+# Working proxy list from your provided data
+WORKING_PROXIES = [
+    {'proxy': '23.95.150.145:6114', 'username': 'sckfugob', 'password': '2j5x61bsrvu0'},
+    {'proxy': '198.23.239.134:6540', 'username': 'sckfugob', 'password': '2j5x61bsrvu0'},
+    {'proxy': '45.38.107.97:6014', 'username': 'sckfugob', 'password': '2j5x61bsrvu0'},
+    {'proxy': '207.244.217.165:6712', 'username': 'sckfugob', 'password': '2j5x61bsrvu0'},
+    {'proxy': '107.172.163.27:6543', 'username': 'sckfugob', 'password': '2j5x61bsrvu0'},
+    {'proxy': '104.222.161.211:6343', 'username': 'sckfugob', 'password': '2j5x61bsrvu0'},
+    {'proxy': '64.137.96.74:6641', 'username': 'sckfugob', 'password': '2j5x61bsrvu0'},
+    {'proxy': '216.10.27.159:6837', 'username': 'sckfugob', 'password': '2j5x61bsrvu0'},
+    {'proxy': '136.0.207.84:6661', 'username': 'sckfugob', 'password': '2j5x61bsrvu0'},
+    {'proxy': '142.147.128.93:6593', 'username': 'sckfugob', 'password': '2j5x61bsrvu0'}
+]
+
+def get_proxy_session():
+    """
+    Create a requests session with a working proxy
+    """
+    import random
+    session = requests.Session()
+    
+    # Try up to 3 random proxies
+    for _ in range(3):
+        proxy_info = random.choice(WORKING_PROXIES)
+        proxy_url = f"http://{proxy_info['username']}:{proxy_info['password']}@{proxy_info['proxy']}"
+        
+        proxies = {
+            'http': proxy_url,
+            'https': proxy_url
+        }
+        
+        try:
+            # Test the proxy with a quick request
+            test_response = requests.get('https://httpbin.org/ip', proxies=proxies, timeout=10)
+            if test_response.status_code == 200:
+                print(f"[*] Using working proxy: {proxy_info['proxy']}")
+                session.proxies.update(proxies)
+                return session
+        except:
+            continue
+    
+    print("[WARN] All proxies failed, using direct connection")
+    return session
+
 def download_image_from_url(image_url, filename=None):
     """
-    Download an image directly from its URL
+    Download an image directly from its URL using working proxies
     """
     global OUTPUT_FILENAME
     try:
@@ -284,7 +328,7 @@ def download_image_from_url(image_url, filename=None):
                             filename = f"facebook_profile_image.{ext}"
         
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
             'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
             'Accept-Language': 'en-US,en;q=0.9',
             'Accept-Encoding': 'gzip, deflate, br',
@@ -296,7 +340,10 @@ def download_image_from_url(image_url, filename=None):
         }
         
         print(f"[*] Downloading image from: {image_url[:100]}...")
-        response = requests.get(image_url, headers=headers, timeout=30)
+        
+        # Get a session with working proxy
+        session = get_proxy_session()
+        response = session.get(image_url, headers=headers, timeout=30)
         
         if response.status_code == 200:
             # Verify it's actually an image
