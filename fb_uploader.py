@@ -237,11 +237,14 @@ def extract_uploader_from_video_url(video_url):
     print(f"🔍 Analyzing video URL: {video_url}")
     
     try:
-        # Set up headers to mimic a real browser
+        # Create a session for better connection management
+        session = requests.Session()
+        
+        # Enhanced headers to better mimic real browsers and avoid cloud detection
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'Accept-Language': 'en-US,en;q=0.9',
             'Accept-Encoding': 'gzip, deflate, br',
             'DNT': '1',
             'Connection': 'keep-alive',
@@ -249,11 +252,18 @@ def extract_uploader_from_video_url(video_url):
             'Sec-Fetch-Dest': 'document',
             'Sec-Fetch-Mode': 'navigate',
             'Sec-Fetch-Site': 'none',
-            'Cache-Control': 'max-age=0'
+            'Sec-Fetch-User': '?1',
+            'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Linux"',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
         }
         
+        session.headers.update(headers)
+        
         print("📡 Fetching video page...")
-        response = requests.get(video_url, headers=headers, timeout=30)
+        response = session.get(video_url, timeout=45, allow_redirects=True)
         
         if response.status_code == 200:
             page_content = response.text
@@ -268,8 +278,72 @@ def extract_uploader_from_video_url(video_url):
     except Exception as e:
         print(f"❌ Error analyzing video URL: {e}")
         
-    # Fallback to browser-based extraction if simple request fails
-    print("🔄 Simple extraction failed, trying browser-based method...")
+    # Multiple fallback strategies for cloud environments like Render
+    print("🔄 Simple extraction failed, trying advanced fallback methods...")
+    
+    # Fallback 1: Try different user agents and request methods
+    fallback_attempts = [
+        {
+            'name': 'Mobile Browser',
+            'headers': {
+                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Accept-Encoding': 'gzip, deflate'
+            }
+        },
+        {
+            'name': 'Windows Firefox',
+            'headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/119.0',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Accept-Encoding': 'gzip, deflate, br'
+            }
+        }
+    ]
+    
+    for attempt in fallback_attempts:
+        try:
+            print(f"🔄 Trying {attempt['name']} headers...")
+            response = requests.get(video_url, headers=attempt['headers'], timeout=30)
+            if response.status_code == 200:
+                page_content = response.text
+                print(f"✅ {attempt['name']} request successful")
+                profiles = extract_profiles_from_content(page_content)
+                if profiles:
+                    print(f"✅ Profile extraction successful with {attempt['name']}")
+                    return profiles
+        except Exception as e:
+            print(f"❌ {attempt['name']} attempt failed: {e}")
+            continue
+    
+    # Fallback 2: Extract video ID and try direct profile approach
+    video_id = extract_video_id_from_url(video_url)
+    if video_id:
+        print(f"🔄 Trying direct video ID approach with ID: {video_id}")
+        # Try to construct potential profile URLs based on video ID patterns
+        potential_ids = []
+        
+        # Sometimes the video ID contains encoded profile information
+        if len(video_id) > 10:
+            # Try to extract numeric sequences that might be profile IDs
+            import re
+            numeric_sequences = re.findall(r'\d{8,}', video_id)
+            for seq in numeric_sequences:
+                if len(seq) >= 10:  # Facebook profile IDs are typically 15+ digits
+                    potential_ids.append(seq)
+        
+        if potential_ids:
+            print(f"🔍 Found potential profile IDs: {potential_ids[:3]}")
+            # Return the most likely profile ID as a constructed profile
+            best_id = potential_ids[0]
+            constructed_profile = f"https://www.facebook.com/profile.php?id={best_id}"
+            print(f"🎯 Constructed potential profile URL: {constructed_profile}")
+            return [("Unknown", constructed_profile)]
+    
+    # Fallback 3: Browser-based extraction (most reliable but slower)
+    print("🔄 Trying browser-based extraction as final fallback...")
     return extract_uploader_with_browser(video_url)
 
 def extract_video_id_from_url(video_url):
