@@ -5,7 +5,7 @@ async function scrapeFacebookVideo(url) {
     try {
         browser = await puppeteer.launch({
             headless: true,
-            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome',
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
             defaultViewport: null,
             timeout: 120000,
             args: [
