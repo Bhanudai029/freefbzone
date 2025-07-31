@@ -162,7 +162,12 @@ def find_chrome_executable():
     else:
         possible_paths = [
             "/usr/bin/google-chrome",
-            "/usr/bin/chromium-browser"
+            "/usr/bin/google-chrome-stable",
+            "/usr/bin/chromium-browser",
+            "/usr/bin/chromium",
+            "/snap/bin/chromium",
+            "/opt/google/chrome/chrome",
+            "/opt/google/chrome/google-chrome"
         ]
     
     for path in possible_paths:

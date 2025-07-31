@@ -45,9 +45,10 @@ def run_fb_uploader(video_url):
             output_lines = result.stdout.split('\n')
             final_url = None
             
-            # Look for the "Final URL:" line in the output
+            # Look for the "Final URL:" line in the output (with or without emoji)
             for line in output_lines:
                 if "Final URL:" in line:
+                    # Handle both "Final URL:" and "🔗 Final URL:" formats
                     final_url = line.split("Final URL:")[-1].strip()
                     break
             

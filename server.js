@@ -113,7 +113,9 @@ app.post('/use-snapsave', (req, res) => {
         console.log(`Processing SnapSave download request for URL: ${url}`);
         
         // Run the Python script to handle the download
-        const command = `python snapsave_downloader.py "${url}"`;
+        // Use python3 on Linux/Render, python on Windows
+        const pythonCmd = process.platform === 'win32' ? 'python' : '/opt/venv/bin/python';
+        const command = `${pythonCmd} snapsave_downloader.py "${url}"`;
         
         exec(command, (error, stdout, stderr) => {
             if (error) {
@@ -589,7 +591,9 @@ app.post('/download-creator-logo-from-video', async (req, res) => {
         const outputFile = 'freefbzone_logo.png';
         
         // Run auto_fb.py with the VIDEO URL in non-interactive mode
-        const command = `python auto_fb.py --video-url "${videoUrl}" --output-file "${outputFile}"`;
+        // Use python3 on Linux/Render, python on Windows
+        const pythonCmd = process.platform === 'win32' ? 'python' : '/opt/venv/bin/python';
+        const command = `${pythonCmd} auto_fb.py --video-url "${videoUrl}" --output-file "${outputFile}"`;
         
         exec(command, { timeout: 300000 }, (error, stdout, stderr) => {
             if (error) {
@@ -682,7 +686,9 @@ app.post('/download-creator-logo-automation', async (req, res) => {
         const outputFile = 'freefbzone_logo.png';
         
         // Run auto_fb.py with the profile URL
-        const command = `python auto_fb.py --profile-url "${profileUrl}" --output-file "${outputFile}"`;
+        // Use python3 on Linux/Render, python on Windows
+        const pythonCmd = process.platform === 'win32' ? 'python' : '/opt/venv/bin/python';
+        const command = `${pythonCmd} auto_fb.py --profile-url "${profileUrl}" --output-file "${outputFile}"`;
         
         exec(command, { timeout: 300000 }, (error, stdout, stderr) => {
             if (error) {
@@ -750,7 +756,9 @@ app.post('/download-audio', async (req, res) => {
         console.log(`Processing audio download request: ${videoUrl}`);
         
         // Use the Python script directly to process audio
-        const command = `python audio.py "${videoUrl}"`;
+        // Use python3 on Linux/Render, python on Windows
+        const pythonCmd = process.platform === 'win32' ? 'python' : '/opt/venv/bin/python';
+        const command = `${pythonCmd} audio.py "${videoUrl}"`;
         
         exec(command, { timeout: 300000 }, (error, stdout, stderr) => {
             if (error) {

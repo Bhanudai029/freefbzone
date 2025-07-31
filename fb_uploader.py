@@ -4,6 +4,7 @@ import re
 import sys
 from urllib.parse import urlparse, parse_qs
 import json
+from profile_automation import download_chromedriver
 
 # Set UTF-8 encoding for Windows console
 if sys.platform.startswith('win'):
@@ -39,7 +40,12 @@ def extract_uploader_with_browser(video_url):
         else:
             possible_chrome_paths = [
                 "/usr/bin/google-chrome",
-                "/usr/bin/chromium-browser"
+                "/usr/bin/google-chrome-stable",
+                "/usr/bin/chromium-browser",
+                "/usr/bin/chromium",
+                "/snap/bin/chromium",
+                "/opt/google/chrome/chrome",
+                "/opt/google/chrome/google-chrome"
             ]
         
         chrome_path = None
@@ -64,7 +70,15 @@ def extract_uploader_with_browser(video_url):
         
         # Create WebDriver
         try:
-            service = Service(ChromeDriverManager().install())
+            # Try to use manual ChromeDriver download first (more reliable for Linux)
+            driver_path = download_chromedriver()
+            if driver_path:
+                print(f"🔧 Using manual ChromeDriver: {driver_path}")
+                service = Service(driver_path)
+            else:
+                print("🔧 Manual download failed, trying WebDriver manager...")
+                service = Service(ChromeDriverManager().install())
+            
             driver = webdriver.Chrome(service=service, options=chrome_options)
         except Exception as e:
             print(f"❌ Failed to create WebDriver: {e}")
