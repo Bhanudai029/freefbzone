@@ -2,8 +2,6 @@ import subprocess
 import sys
 import os
 import time
-import pyautogui
-from pywinauto import Application
 import requests
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -20,30 +18,30 @@ import re
 
 def download_chromedriver():
     """
-    Download the correct ChromeDriver for Windows
+    Download the correct ChromeDriver for Linux
     """
     import zipfile
     import platform
     import json
     
-    print("[DL] Downloading ChromeDriver...")
+    print("[DL] Downloading ChromeDriver for Linux...")
     
-    # Get the correct ChromeDriver version for Chrome 138
+    # Get the correct ChromeDriver version for Chrome (latest stable)
     try:
         # First, try to get the latest stable version
         version_url = "https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json"
         response = requests.get(version_url)
         if response.status_code == 200:
             versions_data = response.json()
-            # Find version 138.x.x.x that has chromedriver downloads
+            # Find the latest version that has chromedriver downloads for Linux
             target_version = None
-            for version_info in versions_data['versions']:
+            for version_info in reversed(versions_data['versions']):  # Start from latest
                 version = version_info['version']
-                if version.startswith('138.') and 'chromedriver' in version_info.get('downloads', {}):
+                if 'chromedriver' in version_info.get('downloads', {}):
                     chromedriver_downloads = version_info['downloads']['chromedriver']
-                    # Look for win32 or win64 version
+                    # Look for linux64 version
                     for download in chromedriver_downloads:
-                        if download['platform'] in ['win32', 'win64']:
+                        if download['platform'] == 'linux64':
                             target_version = version
                             driver_url = download['url']
                             break
@@ -51,17 +49,17 @@ def download_chromedriver():
                         break
             
             if not target_version:
-                # Fallback to a known working version
-                driver_url = "https://storage.googleapis.com/chrome-for-testing-public/138.0.7204.169/win32/chromedriver-win32.zip"
-                target_version = "138.0.7204.169"
+                # Fallback to a known working version for Linux
+                driver_url = "https://storage.googleapis.com/chrome-for-testing-public/131.0.6778.108/linux64/chromedriver-linux64.zip"
+                target_version = "131.0.6778.108"
         else:
-            # Fallback URL
-            driver_url = "https://storage.googleapis.com/chrome-for-testing-public/138.0.7204.169/win32/chromedriver-win32.zip"
-            target_version = "138.0.7204.169"
+            # Fallback URL for Linux
+            driver_url = "https://storage.googleapis.com/chrome-for-testing-public/131.0.6778.108/linux64/chromedriver-linux64.zip"
+            target_version = "131.0.6778.108"
     except:
         # Fallback URL in case of any error
-        driver_url = "https://storage.googleapis.com/chrome-for-testing-public/138.0.7204.169/win32/chromedriver-win32.zip"
-        target_version = "138.0.7204.169"
+        driver_url = "https://storage.googleapis.com/chrome-for-testing-public/131.0.6778.108/linux64/chromedriver-linux64.zip"
+        target_version = "131.0.6778.108"
     
     print(f"[*] Using ChromeDriver version: {target_version}")
     print(f"[*] Download URL: {driver_url}")
@@ -81,11 +79,10 @@ def download_chromedriver():
             # Clean up
             os.remove(zip_path)
             
-            # The new ChromeDriver structure has nested folders
+            # The new ChromeDriver structure has nested folders for Linux
             possible_paths = [
-                os.path.abspath("chromedriver.exe"),
-                os.path.abspath("chromedriver-win32/chromedriver.exe"),
-                os.path.abspath("chromedriver-win64/chromedriver.exe")
+                os.path.abspath("chromedriver"),
+                os.path.abspath("chromedriver-linux64/chromedriver")
             ]
             
             driver_path = None
@@ -96,19 +93,19 @@ def download_chromedriver():
             
             if driver_path:
                 # Move it to the current directory for easier access
-                final_path = os.path.abspath("chromedriver.exe")
+                final_path = os.path.abspath("chromedriver")
                 if driver_path != final_path:
                     import shutil
                     shutil.move(driver_path, final_path)
                     # Clean up the extracted folder
                     try:
-                        import shutil
-                        if os.path.exists("chromedriver-win32"):
-                            shutil.rmtree("chromedriver-win32")
-                        if os.path.exists("chromedriver-win64"):
-                            shutil.rmtree("chromedriver-win64")
+                        if os.path.exists("chromedriver-linux64"):
+                            shutil.rmtree("chromedriver-linux64")
                     except:
                         pass
+                
+                # Make it executable on Linux
+                os.chmod(final_path, 0o755)
                 print(f"[OK] ChromeDriver downloaded successfully: {final_path}")
                 return final_path
             else:
@@ -123,16 +120,11 @@ def download_chromedriver():
 
 def find_chrome_executable():
     """
-    Find Chrome executable on Windows
+    Find Chrome executable on Linux
     """
     possible_paths = [
-        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-        r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
-        r"C:\Users\baral\AppData\Local\Google\Chrome\Application\chrome.exe",
-        r"C:\Users\baral\AppData\Local\Chromium\Application\chrome.exe",
-        os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"),
-        os.path.expandvars(r"%PROGRAMFILES%\Google\Chrome\Application\chrome.exe"),
-        os.path.expandvars(r"%PROGRAMFILES(X86)%\Google\Chrome\Application\chrome.exe"),
+        "/usr/bin/google-chrome",
+        "/usr/bin/chromium-browser"
     ]
     
     for path in possible_paths:
