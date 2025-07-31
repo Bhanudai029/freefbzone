@@ -11,37 +11,97 @@ if sys.platform.startswith('win'):
     sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
     sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
 
-def extract_uploader_from_video_url(video_url):
+def extract_uploader_with_browser(video_url):
     """
-    Extract the uploader's profile information from a Facebook video URL
+    Extract uploader profile using browser automation (fallback method)
     """
-    print(f"🔍 Analyzing video URL: {video_url}")
+    print("🌐 Using browser-based extraction (fallback method)...")
     
     try:
-        # Set up headers to mimic a real browser
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'DNT': '1',
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none',
-            'Cache-Control': 'max-age=0'
-        }
+        # Import here to avoid dependency issues if selenium is not available
+        from selenium import webdriver
+        from selenium.webdriver.chrome.service import Service
+        from selenium.webdriver.chrome.options import Options
+        from webdriver_manager.chrome import ChromeDriverManager
+        import time
+        import platform
+        import os
         
-        print("📡 Fetching video page...")
-        response = requests.get(video_url, headers=headers, timeout=30)
+        # Detect platform and set up Chrome path
+        current_platform = platform.system()
+        if current_platform == "Windows":
+            possible_chrome_paths = [
+                "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+                "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+                "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+                "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe"
+            ]
+        else:
+            possible_chrome_paths = [
+                "/usr/bin/google-chrome",
+                "/usr/bin/chromium-browser"
+            ]
         
-        if response.status_code == 200:
-            page_content = response.text
-            print("✅ Page fetched successfully")
+        chrome_path = None
+        for path in possible_chrome_paths:
+            if os.path.exists(path):
+                chrome_path = path
+                break
+        
+        if not chrome_path:
+            print("❌ Chrome not found for browser extraction")
+            return None
+        
+        # Set up Chrome options
+        chrome_options = Options()
+        chrome_options.add_argument("--headless=new")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument("--window-size=1920,1080")
+        chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
+        chrome_options.binary_location = chrome_path
+        
+        # Create WebDriver
+        try:
+            service = Service(ChromeDriverManager().install())
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+        except Exception as e:
+            print(f"❌ Failed to create WebDriver: {e}")
+            return None
+        
+        try:
+            # Navigate to the video URL
+            driver.get(video_url)
+            time.sleep(5)  # Wait for page to load
             
-            # Multiple patterns to find uploader profile information
-            uploader_patterns = [
+            # Get page source
+            page_content = driver.page_source
+            
+            # Extract profile information using same patterns
+            profiles = extract_profiles_from_content(page_content)
+            
+            driver.quit()
+            return profiles
+            
+        except Exception as e:
+            print(f"❌ Browser extraction failed: {e}")
+            driver.quit()
+            return None
+            
+    except ImportError:
+        print("❌ Selenium not available for browser extraction")
+        return None
+    except Exception as e:
+        print(f"❌ Browser extraction error: {e}")
+        return None
+
+def extract_profiles_from_content(page_content):
+    """
+    Extract profile information from page content using regex patterns
+    """
+    # Multiple patterns to find uploader profile information
+    uploader_patterns = [
                 # Pattern 1: Look for profile.php?id= links with names
                 r'"name":"([^"]+)"[^}]*"url":"(https://www\.facebook\.com/profile\.php\?id=\d+)"',
                 r'"url":"(https://www\.facebook\.com/profile\.php\?id=\d+)"[^}]*"name":"([^"]+)"',
@@ -155,14 +215,48 @@ def extract_uploader_from_video_url(video_url):
             else:
                 print("❌ No uploader profile information found in page content")
                 return None
-                
+
+def extract_uploader_from_video_url(video_url):
+    """
+    Extract the uploader's profile information from a Facebook video URL
+    """
+    print(f"🔍 Analyzing video URL: {video_url}")
+    
+    try:
+        # Set up headers to mimic a real browser
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Cache-Control': 'max-age=0'
+        }
+        
+        print("📡 Fetching video page...")
+        response = requests.get(video_url, headers=headers, timeout=30)
+        
+        if response.status_code == 200:
+            page_content = response.text
+            print("✅ Page fetched successfully")
+            
+            # Extract profile information using patterns
+            profiles = extract_profiles_from_content(page_content)
+            if profiles:
+                return profiles
         else:
             print(f"❌ Failed to fetch page: HTTP {response.status_code}")
-            return None
-            
     except Exception as e:
         print(f"❌ Error analyzing video URL: {e}")
-        return None
+        
+    # Fallback to browser-based extraction if simple request fails
+    print("🔄 Simple extraction failed, trying browser-based method...")
+    return extract_uploader_with_browser(video_url)
 
 def extract_video_id_from_url(video_url):
     """
