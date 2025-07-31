@@ -152,69 +152,69 @@ def extract_profiles_from_content(page_content):
             ]
             
     found_profiles = []
-            
-            # Search for profile patterns
-            for i, pattern in enumerate(uploader_patterns):
-                matches = re.findall(pattern, page_content, re.IGNORECASE)
-                if matches:
-                    print(f"🔍 Found matches with pattern {i+1}: {len(matches)} results")
-                    found_profiles.extend(matches)
-            
-            # Clean and deduplicate results
-            if found_profiles:
-                unique_profiles = []
-                seen = set()
-                
-                for profile in found_profiles:
-                    # Handle tuple results from some regex patterns
-                    if isinstance(profile, tuple):
-                        if len(profile) == 2:
-                            # Check which one is the URL and which is the name
-                            if profile[0].startswith('http') or profile[0].isdigit():
-                                profile_url = profile[0]
-                                profile_name = profile[1]
-                            else:
-                                profile_name = profile[0]
-                                profile_url = profile[1]
-                        else:
-                            profile_url = profile[0]
-                            profile_name = "Unknown"
+    
+    # Search for profile patterns
+    for i, pattern in enumerate(uploader_patterns):
+        matches = re.findall(pattern, page_content, re.IGNORECASE)
+        if matches:
+            print(f"🔍 Found matches with pattern {i+1}: {len(matches)} results")
+            found_profiles.extend(matches)
+    
+    # Clean and deduplicate results
+    if found_profiles:
+        unique_profiles = []
+        seen = set()
+        
+        for profile in found_profiles:
+            # Handle tuple results from some regex patterns
+            if isinstance(profile, tuple):
+                if len(profile) == 2:
+                    # Check which one is the URL and which is the name
+                    if profile[0].startswith('http') or profile[0].isdigit():
+                        profile_url = profile[0]
+                        profile_name = profile[1]
                     else:
-                        profile_url = profile
-                        profile_name = "Unknown"
-                    
-                    # Convert numeric IDs to full profile URLs
-                    if profile_url.isdigit():
-                        profile_url = f"https://www.facebook.com/profile.php?id={profile_url}"
-                    elif not profile_url.startswith('http'):
-                        if profile_url.isdigit():
-                            profile_url = f"https://www.facebook.com/profile.php?id={profile_url}"
-                        else:
-                            # For username-based profiles, make sure it's not a generic term
-                            # Filter out invalid characters and patterns
-                            if (len(profile_url) > 3 and 
-                                not any(x in profile_url.lower() for x in ['www', 'com', 'facebook', 'views', 'reactions', '&#', '|', ' ']) and
-                                not re.search(r'[^a-zA-Z0-9._-]', profile_url)):  # Only allow valid username characters
-                                profile_url = f"https://www.facebook.com/{profile_url}"
-                            else:
-                                continue  # Skip invalid usernames
-                    
-                    # Filter out invalid or generic URLs
-                    if (profile_url not in seen and 
-                        'facebook.com' in profile_url and 
-                        'id=0' not in profile_url and  # Filter out URLs with id=0
-                        not any(x in profile_url.lower() for x in ['login', 'signup', 'help', 'about', 'privacy', 'terms', 'policies', 'support']) and
-                        len(profile_url) > 30):  # Ensure URL is substantial
-                        seen.add(profile_url)
-                        unique_profiles.append((profile_name, profile_url))
-                
-                # Sort by relevance - profiles with names first, then by URL length
-                unique_profiles.sort(key=lambda x: (x[0] == "Unknown", -len(x[1])))
-                
-                return unique_profiles
+                        profile_name = profile[0]
+                        profile_url = profile[1]
+                else:
+                    profile_url = profile[0]
+                    profile_name = "Unknown"
             else:
-                print("❌ No uploader profile information found in page content")
-                return None
+                profile_url = profile
+                profile_name = "Unknown"
+            
+            # Convert numeric IDs to full profile URLs
+            if profile_url.isdigit():
+                profile_url = f"https://www.facebook.com/profile.php?id={profile_url}"
+            elif not profile_url.startswith('http'):
+                if profile_url.isdigit():
+                    profile_url = f"https://www.facebook.com/profile.php?id={profile_url}"
+                else:
+                    # For username-based profiles, make sure it's not a generic term
+                    # Filter out invalid characters and patterns
+                    if (len(profile_url) > 3 and 
+                        not any(x in profile_url.lower() for x in ['www', 'com', 'facebook', 'views', 'reactions', '&#', '|', ' ']) and
+                        not re.search(r'[^a-zA-Z0-9._-]', profile_url)):  # Only allow valid username characters
+                        profile_url = f"https://www.facebook.com/{profile_url}"
+                    else:
+                        continue  # Skip invalid usernames
+            
+            # Filter out invalid or generic URLs
+            if (profile_url not in seen and 
+                'facebook.com' in profile_url and 
+                'id=0' not in profile_url and  # Filter out URLs with id=0
+                not any(x in profile_url.lower() for x in ['login', 'signup', 'help', 'about', 'privacy', 'terms', 'policies', 'support']) and
+                len(profile_url) > 30):  # Ensure URL is substantial
+                seen.add(profile_url)
+                unique_profiles.append((profile_name, profile_url))
+        
+        # Sort by relevance - profiles with names first, then by URL length
+        unique_profiles.sort(key=lambda x: (x[0] == "Unknown", -len(x[1])))
+        
+        return unique_profiles
+    else:
+        print("❌ No uploader profile information found in page content")
+        return None
 
 def extract_uploader_from_video_url(video_url):
     """
