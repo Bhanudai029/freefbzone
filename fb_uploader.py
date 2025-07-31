@@ -151,7 +151,7 @@ def extract_profiles_from_content(page_content):
                 r'"profile_id":"(\d+)"[^}]*"profile_name":"([^"]+)"',
             ]
             
-            found_profiles = []
+    found_profiles = []
             
             # Search for profile patterns
             for i, pattern in enumerate(uploader_patterns):
