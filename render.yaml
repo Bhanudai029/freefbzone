@@ -6,7 +6,7 @@ services:
     plan: free
     region: oregon
     branch: main
-    healthCheckPath: /
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
@@ -15,4 +15,4 @@ services:
       - key: DISPLAY
         value: :99
       - key: PORT
-        value: 10000
+        value: "10000"

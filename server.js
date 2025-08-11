@@ -33,7 +33,7 @@ async function getImagesFromGraph(fbid) {
 }
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 10000;
 
 // Middleware to parse JSON bodies
 app.use(express.json());
@@ -41,9 +41,42 @@ app.use(express.json());
 // Serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Health check endpoint for Render
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Serve Facebook.html as the main page
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'Facebook.html'));
+    const htmlPath = path.join(__dirname, 'public', 'Facebook.html');
+    // Check if the file exists
+    if (fs.existsSync(htmlPath)) {
+        res.sendFile(htmlPath);
+    } else {
+        // Fallback response if HTML file is missing
+        res.status(200).send(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>FreeFBZone</title>
+                <style>
+                    body { font-family: Arial, sans-serif; padding: 20px; text-align: center; }
+                    h1 { color: #1877f2; }
+                </style>
+            </head>
+            <body>
+                <h1>FreeFBZone Server</h1>
+                <p>Server is running successfully on port ${port}</p>
+                <p>API Endpoints Available:</p>
+                <ul style="list-style: none; padding: 0;">
+                    <li>/scrape - Scrape Facebook video</li>
+                    <li>/description - Get video description</li>
+                    <li>/health - Health check</li>
+                </ul>
+            </body>
+            </html>
+        `);
+    }
 });
 
 // API endpoint for description

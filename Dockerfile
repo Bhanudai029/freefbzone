@@ -59,16 +59,21 @@ COPY . .
 
 # Create a startup script
 RUN echo '#!/bin/bash' > /app/start.sh && \
+    echo 'set -e' >> /app/start.sh && \
     echo '' >> /app/start.sh && \
     echo '# Start Xvfb for headless browser automation' >> /app/start.sh && \
     echo 'Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &' >> /app/start.sh && \
+    echo 'sleep 2' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo '# Verify port from environment' >> /app/start.sh && \
+    echo 'echo "Starting server on port: ${PORT:-10000}"' >> /app/start.sh && \
     echo '' >> /app/start.sh && \
     echo '# Start Node.js server' >> /app/start.sh && \
-    echo 'node server.js' >> /app/start.sh && \
+    echo 'exec node server.js' >> /app/start.sh && \
     chmod +x /app/start.sh
 
 # Expose port
 EXPOSE 10000
 
 # Start the application
-CMD ["/app/start.sh"]
+CMD ["/bin/bash", "/app/start.sh"]
