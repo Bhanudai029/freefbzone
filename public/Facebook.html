@@ -41,23 +41,6 @@
             z-index: 2;
         }
 
-        /* Beta label in top right corner */
-        .beta-label {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-            color: white;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
-            z-index: 100;
-            animation: pulse 2s infinite;
-        }
 
         .header {
             margin-bottom: 50px;
@@ -653,7 +636,7 @@
         }
 
         #downloadBtnDownload {
-            margin-left: 150px; /* Adjust this value to move the button more or less */
+            margin-left: 120px; /* Move the button a bit right for all downloads */
         }
 
         /* Add a new class for the bottom overlay */
@@ -1295,9 +1278,6 @@
 <body>
     <div class="grain"></div>
     
-    <!-- Beta label for profile picture download feature -->
-    <div class="beta-label">Beta</div>
-    
     <div class="container">
         <header class="header">
             <div class="brand">
@@ -1394,7 +1374,7 @@
                                     </optgroup>
                                     <optgroup label="Media Assets" style="color: #60a5fa;">
                                         <option value="thumbnail" style="color: #60a5fa;">Download Thumbnail</option>
-                                        <option value="profile_picture" style="color: #60a5fa;">Download Profile Picture</option>
+                                        <option value="profile_picture" style="color: #60a5fa;">Download Profile Picture ᵇᵉᵗᵃ</option>
                                     </optgroup>
                                 </select>
                                 <button id="downloadBtnDownload" class="btn btn-secondary w-full sm:w-auto">
@@ -1549,7 +1529,7 @@
             } else if (selectedQuality === 'thumbnail') {
                 downloadBtnDownload.innerHTML = `${originalDownloadIconHTML || ''} Download Thumbnail`;
             } else if (selectedQuality === 'profile_picture') {
-                downloadBtnDownload.innerHTML = `${originalDownloadIconHTML || ''} Download Profile Picture`;
+                downloadBtnDownload.innerHTML = `${originalDownloadIconHTML || ''} Download Profile Picture <span style="color: #ef4444; font-size: 12px; font-weight: 700; margin-left: 8px; background: rgba(239, 68, 68, 0.1); padding: 2px 8px; border-radius: 12px; border: 1px solid rgba(239, 68, 68, 0.3);">BETA</span>`;
             } else { // This will cover the 'original' video quality option
                 downloadBtnDownload.innerHTML = `${originalDownloadIconHTML || ''} Download Video`;
             }
