@@ -1373,7 +1373,7 @@
                                     </optgroup>
                                     <optgroup label="Media Assets" style="color: #60a5fa;">
                                         <option value="thumbnail" style="color: #60a5fa;">Download Thumbnail</option>
-                                        <option value="logo" style="color: #60a5fa;">Download Creator's Logo</option>
+                                        <!-- <option value="logo" style="color: #60a5fa;">Download Creator's Logo</option> -->
                                     </optgroup>
                                 </select>
                                 <button id="downloadBtnDownload" class="btn btn-secondary w-full sm:w-auto">
@@ -1649,43 +1649,8 @@
                         throw new Error('No thumbnail available for download.');
                     }
                 } else if (selectedQuality === 'logo') {
-                    // Use the new automation endpoint for creator logo download from video URL
-                    const videoUrl = document.getElementById('videoUrl').value.trim();
-                    if (videoUrl) {
-                        const response = await fetch('/download-creator-logo-from-video', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({ videoUrl: videoUrl })
-                        });
-
-                        if (!response.ok) {
-                            const errorData = await response.json();
-                            throw new Error(errorData.error || 'Failed to process logo download.');
-                        }
-
-                        const blob = await response.blob();
-                        const downloadUrl = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = downloadUrl;
-                        a.download = 'freefbzone_logo.png';
-                        a.style.display = 'none';
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        window.URL.revokeObjectURL(downloadUrl);
-
-                        successMessageHtml = `
-                            <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-                                <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
-                                <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
-                            </svg>
-                            <p class="text-green-400">Logo downloaded successfully! File: freefbzone_logo.png</p>
-                        `;
-                    } else {
-                        throw new Error('No creator profile URL available for download.');
-                    }
+                    // Logo download functionality has been disabled temporarily
+                    throw new Error('Logo download is currently unavailable. Please try again later.');
                 }
                 
                 // Display the success message for all cases (moved outside if/else for better structure)
