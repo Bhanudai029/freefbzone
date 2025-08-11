@@ -1897,7 +1897,9 @@
                 /fb\.watch\//,
                 /facebook\.com\/video\.php/,
                 /facebook\.com\/.*\/posts\/.*video/,
-                /facebook\.com\/share\/v\//
+                /facebook\.com\/share\/v\//,
+                /facebook\.com\/share\/r\//,  // Support for /share/r/ format
+                /facebook\.com\/reel\//        // Also support for reel format
             ];
             
             return patterns.some(pattern => pattern.test(url));
