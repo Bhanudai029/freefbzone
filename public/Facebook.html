@@ -41,6 +41,24 @@
             z-index: 2;
         }
 
+        /* Beta label in top right corner */
+        .beta-label {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+            z-index: 100;
+            animation: pulse 2s infinite;
+        }
+
         .header {
             margin-bottom: 50px;
         }
@@ -1277,6 +1295,9 @@
 <body>
     <div class="grain"></div>
     
+    <!-- Beta label for profile picture download feature -->
+    <div class="beta-label">Beta</div>
+    
     <div class="container">
         <header class="header">
             <div class="brand">
@@ -1373,7 +1394,7 @@
                                     </optgroup>
                                     <optgroup label="Media Assets" style="color: #60a5fa;">
                                         <option value="thumbnail" style="color: #60a5fa;">Download Thumbnail</option>
-                                        <!-- <option value="logo" style="color: #60a5fa;">Download Creator's Logo</option> -->
+                                        <option value="profile_picture" style="color: #60a5fa;">Download Profile Picture</option>
                                     </optgroup>
                                 </select>
                                 <button id="downloadBtnDownload" class="btn btn-secondary w-full sm:w-auto">
@@ -1527,8 +1548,8 @@
                 downloadBtnDownload.innerHTML = `${originalDownloadIconHTML || ''} Download MP3 Audio`;
             } else if (selectedQuality === 'thumbnail') {
                 downloadBtnDownload.innerHTML = `${originalDownloadIconHTML || ''} Download Thumbnail`;
-            } else if (selectedQuality === 'logo') {
-                downloadBtnDownload.innerHTML = `${originalDownloadIconHTML || ''} Download Creator's Logo`;
+            } else if (selectedQuality === 'profile_picture') {
+                downloadBtnDownload.innerHTML = `${originalDownloadIconHTML || ''} Download Profile Picture`;
             } else { // This will cover the 'original' video quality option
                 downloadBtnDownload.innerHTML = `${originalDownloadIconHTML || ''} Download Video`;
             }
@@ -1648,9 +1669,40 @@
                     } else {
                         throw new Error('No thumbnail available for download.');
                     }
-                } else if (selectedQuality === 'logo') {
-                    // Logo download functionality has been disabled temporarily
-                    throw new Error('Logo download is currently unavailable. Please try again later.');
+                } else if (selectedQuality === 'profile_picture') {
+                    // Download profile picture (creator's logo)
+                    const logoUrl = creatorLogo.src;
+                    if (logoUrl && logoUrl !== 'https://via.placeholder.com/50x50') {
+                        // Transform the URL to get the highest quality version
+                        const highQualityUrl = transformToOriginalProfilePicture(logoUrl);
+                        
+                        try {
+                            const response = await fetch(highQualityUrl);
+                            const blob = await response.blob();
+                            const downloadUrl = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = downloadUrl;
+                            a.download = 'Freefbzone_profile_picture.jpg';
+                            a.style.display = 'none';
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            window.URL.revokeObjectURL(downloadUrl);
+
+                            successMessageHtml = `
+                                <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                                    <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
+                                    <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                                </svg>
+                                <p class="text-green-400">Profile picture downloaded successfully! File: Freefbzone_profile_picture.jpg</p>
+                            `;
+                        } catch (error) {
+                            console.error('Failed to download profile picture:', error);
+                            throw new Error('Failed to download profile picture. The image may be protected or unavailable.');
+                        }
+                    } else {
+                        throw new Error('No profile picture available for download.');
+                    }
                 }
                 
                 // Display the success message for all cases (moved outside if/else for better structure)
