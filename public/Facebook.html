@@ -1374,7 +1374,7 @@
                                     </optgroup>
                                     <optgroup label="Media Assets" style="color: #60a5fa;">
                                         <option value="thumbnail" style="color: #60a5fa;">Download Thumbnail</option>
-                                        <option value="profile_picture" style="color: #60a5fa;">Download Profile Picture ᵇᵉᵗᵃ</option>
+                                        <option value="profile_picture" style="color: #60a5fa;">Download Profile Picture <span style="font-family: 'Courier New', monospace; color: #ff6b6b; font-weight: 900; text-transform: uppercase;">BETA</span></option>
                                     </optgroup>
                                 </select>
                                 <button id="downloadBtnDownload" class="btn btn-secondary w-full sm:w-auto">
@@ -1529,7 +1529,7 @@
             } else if (selectedQuality === 'thumbnail') {
                 downloadBtnDownload.innerHTML = `${originalDownloadIconHTML || ''} Download Thumbnail`;
             } else if (selectedQuality === 'profile_picture') {
-                downloadBtnDownload.innerHTML = `${originalDownloadIconHTML || ''} Download Profile Picture <span style="color: #ef4444; font-size: 12px; font-weight: 700; margin-left: 8px; background: rgba(239, 68, 68, 0.1); padding: 2px 8px; border-radius: 12px; border: 1px solid rgba(239, 68, 68, 0.3);">BETA</span>`;
+                downloadBtnDownload.innerHTML = `${originalDownloadIconHTML || ''} Download Profile Picture <span style="font-family: 'Courier New', monospace; color: #ff6b6b; font-size: 14px; font-weight: 900; margin-left: 8px; background: linear-gradient(135deg, rgba(255, 107, 107, 0.15), rgba(255, 87, 87, 0.1)); padding: 3px 10px; border-radius: 16px; border: 2px solid rgba(255, 107, 107, 0.4); text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 0 10px rgba(255, 107, 107, 0.5);">BETA</span>`;
             } else { // This will cover the 'original' video quality option
                 downloadBtnDownload.innerHTML = `${originalDownloadIconHTML || ''} Download Video`;
             }
