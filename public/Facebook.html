@@ -584,6 +584,119 @@
             font-size: 16px;
             font-weight: 500;
             margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .downloads-title::before {
+            content: "- ";
+            margin-right: 5px;
+        }
+        
+        /* Custom dropdown styles */
+        .custom-dropdown {
+            position: relative;
+            width: 100%;
+            max-width: 100%;
+        }
+        
+        .dropdown-selected {
+            background-color: #34495e !important;
+            border: 2px solid #3498db !important;
+            border-radius: 8px !important;
+            padding: 14px 16px !important;
+            cursor: pointer;
+            color: #3498db !important;
+            font-size: 15px !important;
+            font-weight: 500 !important;
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            transition: all 0.2s ease;
+            min-height: 52px;
+        }
+        
+        .dropdown-selected:hover {
+            background-color: #3d566e !important;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+        }
+        
+        .dropdown-arrow {
+            color: #3498db !important;
+            font-size: 14px !important;
+            transition: transform 0.3s ease !important;
+        }
+        
+        .dropdown-content {
+            display: none;
+            background-color: #34495e !important;
+            border: 1px solid #3498db !important;
+            border-top: none !important;
+            border-radius: 0 0 8px 8px !important;
+            margin-top: -2px !important;
+            position: absolute !important;
+            width: 100% !important;
+            z-index: 1000 !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+        
+        .dropdown-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .dropdown-content::-webkit-scrollbar-track {
+            background: #2c3e50;
+        }
+        
+        .dropdown-content::-webkit-scrollbar-thumb {
+            background: #3498db;
+            border-radius: 3px;
+        }
+        
+        .section-title {
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            margin: 10px 16px !important;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.9;
+        }
+        
+        .dropdown-item {
+            padding: 12px 16px !important;
+            color: #bdc3c7 !important;
+            font-size: 14px !important;
+            cursor: pointer !important;
+            border-bottom: 1px solid #2c3e50 !important;
+            transition: all 0.2s ease;
+        }
+        
+        .dropdown-item:last-child {
+            border-bottom: none !important;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #3d566e !important;
+            color: #ffffff !important;
+            padding-left: 20px !important;
+        }
+        
+        /* BETA badge styles */
+        .beta3 {
+            color: white !important;
+            background-color: #ff4757 !important;
+            font-family: 'Verdana', sans-serif !important;
+            font-weight: bold !important;
+            font-size: 10px !important;
+            padding: 2px 5px !important;
+            border-radius: 10px !important;
+            margin-left: 6px !important;
+            vertical-align: super !important;
+            position: relative !important;
+            top: -3px !important;
+            display: inline-block;
         }
 
         .download-options-row {
@@ -632,11 +745,12 @@
         }
 
         .download-video-btn:hover {
-            background: #16a34a;
+            background: #16a34a !important;
+            transform: translateY(-1px);
         }
-
-        #downloadBtnDownload {
-            margin-left: 120px; /* Move the button a bit right for all downloads */
+        
+        .download-video-btn:active {
+            transform: translateY(0);
         }
 
         /* Add a new class for the bottom overlay */
@@ -1361,28 +1475,61 @@
                             <p id="videoDescription" class="video-description"></p>
                         </div>
 
-                        <!-- Download section from test.html -->
-                        <div class="mt-8 pt-6 border-t border-gray-700" id="downloadSectionWrapper" style="display: none;">
-                            <h4 class="form-label text-lg mb-2">- Available downloads</h4>
-                            <div class="flex flex-col sm:flex-row items-center gap-4">
-                                <select id="qualitySelect" class="w-full sm:w-auto flex-grow p-3">
-                                    <optgroup label="Video Downloads">
-                                        <option value="original">HD quality (Original)</option>
-                                    </optgroup>
-                                    <optgroup label="Audio Downloads" style="color: #4ade80;">
-                                        <option value="mp3" style="color: #4ade80;">MP3 Audio</option>
-                                    </optgroup>
-                                    <optgroup label="Media Assets" style="color: #60a5fa;">
-                                        <option value="thumbnail" style="color: #60a5fa;">Download Thumbnail</option>
-                                        <option value="profile_picture" style="color: #60a5fa;">Download Profile Picture ᵇᵉᵗᵃ</option>
-                                    </optgroup>
+                        <!-- Download section with new design -->
+                        <div class="download-section" id="downloadSectionWrapper" style="display: none;">
+                            <div class="downloads-container" style="background-color: transparent; padding: 0; box-shadow: none; max-width: 100%;">
+                                <div class="downloads-title">Available downloads</div>
+                                
+                                <div class="dropdown-section" style="margin-bottom: 20px;">
+                                    <div class="custom-dropdown">
+                                        <div class="dropdown-selected" id="dropdownToggle">
+                                            <span id="selectedText">Download Profile Picture<span class="beta3">BETA</span></span>
+                                            <span class="dropdown-arrow" id="dropdownArrow">▼</span>
+                                        </div>
+                                        <div class="dropdown-content" id="dropdownContent">
+                                            <!-- Video Downloads -->
+                                            <div class="section-title" style="color: #2ecc71;">Video Downloads</div>
+                                            <div class="dropdown-item" data-value="original">
+                                                <i class="fa-solid fa-video" style="margin-right: 8px; color: #2ecc71; font-size: 14px;"></i>
+                                                HD quality (Original)
+                                            </div>
+                                            
+                                            <!-- Audio Downloads -->
+                                            <div class="section-title" style="color: #3498db;">Audio Downloads</div>
+                                            <div class="dropdown-item" data-value="mp3">
+                                                <i class="fa-solid fa-music" style="margin-right: 8px; color: #3498db; font-size: 14px;"></i>
+                                                MP3 Audio
+                                            </div>
+                                            
+                                            <!-- Media Assets -->
+                                            <div class="section-title" style="color: #bdc3c7;">Media Assets</div>
+                                            <div class="dropdown-item" data-value="thumbnail">
+                                                <i class="fa-solid fa-image" style="margin-right: 8px; color: #9ca3af; font-size: 14px;"></i>
+                                                Download Thumbnail
+                                            </div>
+                                            <div class="dropdown-item" data-value="profile_picture">
+                                                <i class="fa-solid fa-user-circle" style="margin-right: 8px; color: #9ca3af; font-size: 14px;"></i>
+                                                Download Profile Picture<span class="beta3">BETA</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Hidden select element to maintain compatibility with existing JavaScript -->
+                                <select id="qualitySelect" style="display: none;">
+                                    <option value="profile_picture" selected>Download Profile Picture</option>
+                                    <option value="original">HD quality (Original)</option>
+                                    <option value="mp3">MP3 Audio</option>
+                                    <option value="thumbnail">Download Thumbnail</option>
                                 </select>
-                                <button id="downloadBtnDownload" class="btn btn-secondary w-full sm:w-auto">
-                                    <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                
+                                <!-- Download button (hidden by default, shown when item selected) -->
+                                <button id="downloadBtnDownload" class="download-video-btn" style="display: none; width: 100%; margin-top: 0; background: #22c55e; color: white; border: none; border-radius: 12px; padding: 14px 20px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">
+                                    <svg style="width: 20px; height: 20px; margin-right: 8px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                         <path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.905 3.079V2.75z" />
                                         <path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" />
                                     </svg>
-                                    Download Selected Format
+                                    <span>Download Selected Format</span>
                                 </button>
                             </div>
                             <div id="downloadingSpinner" class="hidden mt-4">
@@ -1464,6 +1611,12 @@
         const downloadingSpinner = document.getElementById('downloadingSpinner');
         const downloadStatus = document.getElementById('downloadStatus');
         
+        // Dropdown elements
+        const dropdownToggle = document.getElementById('dropdownToggle');
+        const dropdownContent = document.getElementById('dropdownContent');
+        const dropdownArrow = document.getElementById('dropdownArrow');
+        const selectedText = document.getElementById('selectedText');
+        
         let originalDownloadIconHTML = '';
         let processingTextInterval = null;
 
@@ -1512,27 +1665,97 @@
             // Ensure features grid is visible and video results are hidden on page load
             document.getElementById('featuresGrid').style.display = 'grid';
             document.getElementById('videoInfoResults').style.display = 'none';
+            
+            // Initialize dropdown functionality
+            initializeDropdown();
         });
 
+        // Initialize dropdown functionality
+        function initializeDropdown() {
+            // Toggle dropdown on click
+            if (dropdownToggle) {
+                dropdownToggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const isOpen = dropdownContent.style.display === 'block';
+                    dropdownContent.style.display = isOpen ? 'none' : 'block';
+                    dropdownArrow.style.transform = isOpen ? '' : 'rotate(180deg)';
+                });
+            }
+            
+            // Handle dropdown item selection
+            const dropdownItems = document.querySelectorAll('.dropdown-item');
+            dropdownItems.forEach(item => {
+                // Add hover effect
+                item.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = '#3d566e';
+                });
+                item.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = '';
+                });
+                
+                // Handle click
+                item.addEventListener('click', function() {
+                    const value = this.getAttribute('data-value');
+                    const text = this.innerHTML; // Use innerHTML to preserve the BETA badge and icons
+                    
+                    // Update selected text (remove icon for display)
+                    const textWithoutIcon = text.replace(/<i[^>]*>.*?<\/i>/g, '').trim();
+                    selectedText.innerHTML = textWithoutIcon;
+                    
+                    // Update hidden select element
+                    qualitySelect.value = value;
+                    
+                    // Close dropdown
+                    dropdownContent.style.display = 'none';
+                    dropdownArrow.style.transform = '';
+                    
+                    // Show download button with animation
+                    downloadBtnDownload.style.display = 'flex';
+                    downloadBtnDownload.style.alignItems = 'center';
+                    downloadBtnDownload.style.justifyContent = 'center';
+                    
+                    // Update download button text
+                    updateDownloadButtonText();
+                    
+                    // DO NOT trigger download automatically - user must click the button
+                    // Removed automatic download trigger
+                });
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!dropdownToggle.contains(event.target) && !dropdownContent.contains(event.target)) {
+                    dropdownContent.style.display = 'none';
+                    dropdownArrow.style.transform = '';
+                }
+            });
+        }
+        
         qualitySelect.addEventListener('change', function() {
             updateDownloadButtonText();
         });
         
         function updateDownloadButtonText() {
             const selectedQuality = qualitySelect.value;
-            if (!originalDownloadIconHTML && downloadBtnDownload && downloadBtnDownload.querySelector('svg')) {
-                originalDownloadIconHTML = downloadBtnDownload.querySelector('svg').outerHTML;
-            }
+            const iconSvg = `<svg style="width: 20px; height: 20px; margin-right: 8px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.905 3.079V2.75z" />
+                <path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" />
+            </svg>`;
 
             if (selectedQuality === 'mp3') {
-                downloadBtnDownload.innerHTML = `${originalDownloadIconHTML || ''} Download MP3 Audio`;
+                downloadBtnDownload.innerHTML = `${iconSvg}<span>Download MP3 Audio</span>`;
             } else if (selectedQuality === 'thumbnail') {
-                downloadBtnDownload.innerHTML = `${originalDownloadIconHTML || ''} Download Thumbnail`;
+                downloadBtnDownload.innerHTML = `${iconSvg}<span>Download Thumbnail</span>`;
             } else if (selectedQuality === 'profile_picture') {
-                downloadBtnDownload.innerHTML = `${originalDownloadIconHTML || ''} Download Profile Picture <span style="color: #ef4444; font-size: 12px; font-weight: 700; margin-left: 8px; background: rgba(239, 68, 68, 0.1); padding: 2px 8px; border-radius: 12px; border: 1px solid rgba(239, 68, 68, 0.3);">BETA</span>`;
+                downloadBtnDownload.innerHTML = `${iconSvg}<span>Download Profile Picture</span> <span class="beta3" style="position: relative; top: -2px; margin-left: 6px;">BETA</span>`;
             } else { // This will cover the 'original' video quality option
-                downloadBtnDownload.innerHTML = `${originalDownloadIconHTML || ''} Download Video`;
+                downloadBtnDownload.innerHTML = `${iconSvg}<span>Download HD Video</span>`;
             }
+            
+            // Ensure button has flex display for proper alignment
+            downloadBtnDownload.style.display = 'flex';
+            downloadBtnDownload.style.alignItems = 'center';
+            downloadBtnDownload.style.justifyContent = 'center';
         }
 
         downloadBtnDownload.addEventListener('click', async () => {
@@ -1812,6 +2035,9 @@
             }
             // Show the download section when video info is displayed
             document.getElementById('downloadSectionWrapper').style.display = 'block';
+            
+            // Hide the download button initially (user needs to select from dropdown)
+            downloadBtnDownload.style.display = 'none';
         }
 
         // Loading state
